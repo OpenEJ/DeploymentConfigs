@@ -1,0 +1,68 @@
+# Last modified : 10-3-2022 by Dominic
+
+# DECLARE MICROSERVICES
+upstream closed_loop_maf_scaling {
+        server localhost:8000;
+}
+upstream open_loop_maf_scaling {
+        server localhost:8001;
+}
+upstream tip_in_enrichment {
+        server localhost:8002;
+}
+
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /var/www/html;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name _;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
+
+server {
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        server_name openej.io; # managed by Certbot
+
+        #FRONTEND
+        location / {
+                proxy_pass http://localhost:3000/;
+        }
+        #BACKEND SERVICES
+        location /api/analyze/0/ { 
+                proxy_pass http://closed_loop_maf_scaling/;
+        }
+        location /api/analyze/1/ {
+                proxy_pass http://open_loop_maf_scaling;
+        }
+        location /api/analyze/2/ {
+                proxy_pass http://tip_in_enrichment;
+        }
+
+        # SSL STUFF ***DO NOT CHANGE***
+        listen [::]:443 ssl ipv6only=on; # managed by Certbot
+        listen 443 ssl; # managed by Certbot
+        ssl_certificate /etc/letsencrypt/live/openej.io/fullchain.pem; # managed by Certbot
+        ssl_certificate_key /etc/letsencrypt/live/openej.io/privkey.pem; # managed by Certbot
+        include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+        if ($host = openej.io) {
+        return 301 https://$host$request_uri;
+        } # managed by Certbot
+
+
+        listen 80 ;
+        listen [::]:80 ;
+        server_name openej.io;
+        return 404; # managed by Certbot
+}
