@@ -1,16 +1,4 @@
 # Last modified : 10-3-2022 by Dominic
-
-# DECLARE MICROSERVICES
-upstream closed_loop_maf_scaling {
-        server localhost:8000;
-}
-upstream open_loop_maf_scaling {
-        server localhost:8001;
-}
-upstream tip_in_enrichment {
-        server localhost:8002;
-}
-
 server {
         listen 80 default_server;
         listen [::]:80 default_server;
